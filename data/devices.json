@@ -1,0 +1,42 @@
+[
+    {
+        "name": "Camera 1",
+        "category": "Camera",
+        "status": "online"
+    },
+    {
+        "name": "Camera 2",
+        "category": "Camera",
+        "status": "offline"
+    },
+    {
+        "name": "Soil Sensor 1",
+        "category": "Soil",
+        "status": "online"
+    },
+    {
+        "name": "Soil Sensor 2",
+        "category": "Soil",
+        "status": "online"
+    },
+    {
+        "name": "Temperature Sensor 1",
+        "category": "Temperature",
+        "status": "offline"
+    },
+    {
+        "name": "Temperature Sensor 2",
+        "category": "Temperature",
+        "status": "offline"
+    },
+    {
+        "name": "Lightning Sensor 1",
+        "category": "Lightning",
+        "status": "online"
+    },
+    {
+        "name": "Lightning Sensor 2",
+        "category": "Lightning",
+        "status": "online"
+    }
+]
