@@ -6,3 +6,10 @@ export interface LightData {
     end_time: number;
   }
   
+
+export interface ProcessedLightData {
+    id: string;
+    startTime: string;
+    endTime: string;
+    duration: number; // Duration in minutes
+  } 
