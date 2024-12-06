@@ -1,6 +1,6 @@
 // app/temperature/page.tsx
 
-'use client'; // Marks this component as a Client Component
+'use client';
 
 import { useEffect, useState } from 'react';
 import {
@@ -12,7 +12,7 @@ import {
 import {
   auth,
   db,
-} from '../../lib/firebase'; // Adjust the path if necessary
+} from '../../lib/firebase';
 import { TempData } from '../../interfaces/tempData';
 import {
   User,
@@ -36,7 +36,7 @@ const TemperaturePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
 
-  // Handle Authentication State
+  // Authentication
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
@@ -52,7 +52,7 @@ const TemperaturePage: React.FC = () => {
     return () => unsubscribeAuth();
   }, []);
 
-  // Fetch Temperature Data After User is Authenticated
+  // Fetch Temp Data
   useEffect(() => {
     if (!user) return;
 
