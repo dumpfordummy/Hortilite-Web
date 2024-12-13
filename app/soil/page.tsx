@@ -106,13 +106,13 @@ const SoilPage: React.FC = () => {
               <h3 className="text-xl font-medium mb-2">Entry {data.id}</h3>
               <p className="text-gray-700">Date Time: {data.date_time.toString()}</p>
               <p className="text-gray-700">EC: {data.EC} us/cm</p>
-              <p className="text-gray-700">Humidity: {data.humidity}%</p>
-              <p className="text-gray-700">Moisture: {data.moisture}%</p>
-              <p className="text-gray-700">Nitrogen: {data.nitrogen} mg/kg</p>
+              <p className="text-gray-700">Humidity: {data.Humidity}%</p>
+              <p className="text-gray-700">Moisture: {data.Moisture}%</p>
+              <p className="text-gray-700">Nitrogen: {data.Nitrogen} mg/kg</p>
               <p className="text-gray-700">pH: {data.pH}</p>
-              <p className="text-gray-700">Phosphorus: {data.phosphorus} mg/kg</p>
-              <p className="text-gray-700">Potassium: {data.potassium} mg/kg</p>
-              <p className="text-gray-700">Temperature: {data.temperature} °C</p>
+              <p className="text-gray-700">Phosphorus: {data.Phosphorus} mg/kg</p>
+              <p className="text-gray-700">Potassium: {data.Potassium} mg/kg</p>
+              <p className="text-gray-700">Temperature: {data.Temperature} °C</p>
             </div>
           ))}
         </div>

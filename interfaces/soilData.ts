@@ -4,12 +4,12 @@ export interface SoilData {
     id: string;
     EC: number;
     date_time: Date; // Date object after conversion
-    humidity: number;
-    moisture: number;
-    nitrogen: number;
+    Humidity: number;
+    Moisture: number;
+    Nitrogen: number;
     pH: number;
-    phosphorus: number;
-    potassium: number;
-    temperature: number;
+    Phosphorus: number;
+    Potassium: number;
+    Temperature: number;
   }
   

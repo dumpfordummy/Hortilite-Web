@@ -58,16 +58,17 @@ const TemperaturePage: React.FC = () => {
 
     const fetchData = async () => {
       try {
-        const tempCollectionRef = collection(db, 'Temperature');
+        const tempCollectionRef = collection(db, 'DHT22');
         const tempSnapshots = await getDocs(tempCollectionRef);
 
         const dataPromises = tempSnapshots.docs.map(async (tempDoc) => {
           const tempId = tempDoc.id;
-          const dataCollectionRef = collection(db, 'Temperature', tempId, 'Data');
+          const dataCollectionRef = collection(db, 'DHT22', tempId, 'Data');
           const dataSnapshots = await getDocs(dataCollectionRef);
 
           const dataArray: TempData[] = dataSnapshots.docs.map((doc) => {
             const data = doc.data();
+            console.log(data);
             return {
               id: doc.id,
               ...data,
@@ -126,8 +127,8 @@ const TemperaturePage: React.FC = () => {
             <div key={data.id} className="bg-gray-100 p-4 mb-4 rounded-lg">
               <h3 className="text-xl font-medium mb-2">Entry {data.id}</h3>
               <p className="text-gray-700">Date Time: {data.date_time.toLocaleString()}</p>
-              <p className="text-gray-700">Humidity: {data.humidity}%</p>
-              <p className="text-gray-700">Temperature: {data.temperature}°C</p>
+              <p className="text-gray-700">Humidity: {data.Humidity}%</p>
+              <p className="text-gray-700">Temperature: {data.Temperature}°C</p>
             </div>
           ))}
         </div>
