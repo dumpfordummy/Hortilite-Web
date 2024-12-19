@@ -1,4 +1,4 @@
-// app/temperature/page.tsx
+// app/dht22/page.tsx
 
 'use client';
 
@@ -31,7 +31,7 @@ const handleGoogleSignIn = async () => {
   }
 };
 
-const TemperaturePage: React.FC = () => {
+const Dht22Page: React.FC = () => {
   const [tempDataMap, setTempDataMap] = useState<Record<string, TempData[]>>({});
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
@@ -137,4 +137,4 @@ const TemperaturePage: React.FC = () => {
   );
 };
 
-export default TemperaturePage;
+export default Dht22Page;

@@ -6,5 +6,5 @@ export interface TempData {
     Humidity: number;
     Temperature: number;
 
-  }
+}
   

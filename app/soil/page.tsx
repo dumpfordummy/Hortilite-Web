@@ -1,3 +1,5 @@
+// app/soil.tsx
+
 "use client"
 import { useEffect, useState } from 'react';
 import { collection, getDocs, Timestamp, onSnapshot } from 'firebase/firestore';
