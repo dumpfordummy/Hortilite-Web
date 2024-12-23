@@ -25,7 +25,7 @@ export default function DeviceStatusPage() {
     const [loading, setLoading] = useState(true)
     const [deviceType, setDeviceType] = useState('Camera')
     const [devices, setDevices] = useState<Device[]>([])
-
+    
     useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser)
