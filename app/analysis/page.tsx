@@ -105,14 +105,15 @@ const AnalysisPage: React.FC = () => {
   }
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>Growth Rate Analysis</h1>
+    <div className='p-6'>
+      <h1 className="text-3xl font-bold text-center mb-4">Growth Rate Analysis</h1>
+      <p>Select two images to analyze:</p>
       <div>
-        <p>Select two images to analyze:</p>
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <div style={{ flex: 1, marginRight: '10px' }}>
-            <label>Image 1: </label>
-            <select value={selectedImage1 || ''} onChange={(e) => handleImageSelect(e.target.value, setSelectedImage1, setPreviewUrl1)}>
+        <div className="min-h-screen flex flex-row items-center justify-center p-6 bg-gray-50">
+          <div style={{ flex: 1, marginRight: '10px' }} className='flex flex-col items-center justify-center min-h-screen rounded-md border-dashed border-2 border-green-600'>
+            <label className='text-lg'>Image 1: </label>
+            <select value={selectedImage1 || ''} onChange={(e) => handleImageSelect(e.target.value, setSelectedImage1, setPreviewUrl1)}
+              className="block border border-gray-300 rounded p-2">
               <option value="" disabled>Select an image</option>
               {images.map((image) => (
                 <option key={image.name} value={image.name}>
@@ -131,9 +132,10 @@ const AnalysisPage: React.FC = () => {
               </div>
             )}
           </div>
-          <div style={{ flex: 1, marginLeft: '10px' }}>
-            <label>Image 2: </label>
-            <select value={selectedImage2 || ''} onChange={(e) => handleImageSelect(e.target.value, setSelectedImage2, setPreviewUrl2)}>
+          <div style={{ flex: 1, marginLeft: '10px' }} className='flex flex-col items-center justify-center min-h-screen rounded-md border-dashed border-2 border-green-600'>
+            <label className='text-lg'>Image 2: </label>
+            <select value={selectedImage2 || ''} onChange={(e) => handleImageSelect(e.target.value, setSelectedImage2, setPreviewUrl2)} 
+            className="block border border-gray-300 rounded p-2">
               <option value="" disabled>Select an image</option>
               {images.map((image) => (
                 <option key={image.name} value={image.name}>
@@ -153,7 +155,10 @@ const AnalysisPage: React.FC = () => {
             )}
           </div>
         </div>
-        <button onClick={analyzeImages} disabled={!selectedImage1 || !selectedImage2}>
+
+        <br />
+        <button onClick={analyzeImages} disabled={!selectedImage1 || !selectedImage2} 
+        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
           Analyze
         </button>
       </div>
