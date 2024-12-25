@@ -4,9 +4,86 @@ import cv2
 import numpy as np
 import os
 from werkzeug.utils import secure_filename
+from datetime import datetime
+
 
 app = Flask(__name__)
 CORS(app)
+
+
+
+UPLOAD_FOLDER = 'uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+def calculate_green_percentage(image_path):
+    # Read the image
+    image = cv2.imread(image_path)
+
+    # Convert the image to HSV color space
+    hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+    # Define the range for the green color
+    lower_green = np.array([35, 40, 40])  # Adjust the lower range of green
+    upper_green = np.array([85, 255, 255])  # Adjust the upper range of green
+
+    # Create a binary mask where green colors are white
+    mask = cv2.inRange(hsv_image, lower_green, upper_green)
+
+    # Calculate the percentage of green area
+    total_pixels = mask.size
+    green_pixels = cv2.countNonZero(mask)
+    green_percentage = (green_pixels / total_pixels) * 100
+
+    return green_percentage
+
+@app.route('/analyze-growth', methods=['POST'])
+def analyze_growth():
+    if 'images' not in request.files:
+        return jsonify({"error": "No images provided"}), 400
+
+    files = request.files.getlist('images')
+    if len(files) < 2:
+        return jsonify({"error": "At least two images are required to calculate growth rate"}), 400
+
+    growth_data = []
+    green_percentages = []
+    timestamps = []
+
+    for file in files:
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
+
+        try:
+            green_percentage = calculate_green_percentage(file_path)
+            green_percentages.append(green_percentage)
+            timestamps.append(datetime.now().isoformat())  # Use actual timestamp metadata if available
+            growth_data.append({
+                "filename": filename,
+                "green_percentage": green_percentages
+            })
+        finally:
+            os.remove(file_path)
+
+    # Calculate growth rates between consecutive images
+    growth_rates = []
+    for i in range(1, len(green_percentages)):
+        rate = ((green_percentages[i] - green_percentages[i - 1]) / green_percentages[i - 1]) * 100
+        growth_rates.append({
+            "from_image": growth_data[i - 1]['filename'],
+            "to_image": growth_data[i]['filename'],
+            "growth_rate": rate
+        })
+
+    return jsonify({
+        "growth_rates": growth_rates,
+        "details": growth_data
+    }), 200
+
+
+
+
 
 # Allowed extensions for upload
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
