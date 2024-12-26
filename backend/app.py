@@ -37,51 +37,141 @@ def calculate_green_percentage(image_path):
 
     return green_percentage
 
-@app.route('/analyze-growth', methods=['POST'])
-def analyze_growth():
+# @app.route('/analyze-growth', methods=['POST'])
+# def analyze_growth():
+#     if 'images' not in request.files:
+#         return jsonify({"error": "No images provided"}), 400
+
+#     files = request.files.getlist('images')
+#     if len(files) < 2:
+#         return jsonify({"error": "At least two images are required to calculate growth rate"}), 400
+
+#     growth_data = []
+#     green_percentages = []
+#     timestamps = []
+
+#     for file in files:
+#         filename = secure_filename(file.filename)
+#         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+#         file.save(file_path)
+
+#         try:
+#             green_percentage = calculate_green_percentage(file_path)
+#             green_percentages.append(green_percentage)
+#             timestamps.append(datetime.now().isoformat())  # Use actual timestamp metadata if available
+#             growth_data.append({
+#                 "filename": filename,
+#                 "green_percentage": green_percentages
+#             })
+#         finally:
+#             os.remove(file_path)
+
+#     # Calculate growth rates between consecutive images
+#     growth_rates = []
+#     for i in range(1, len(green_percentages)):
+#         rate = ((green_percentages[i] - green_percentages[i - 1]) / green_percentages[i - 1]) * 100
+#         growth_rates.append({
+#             "from_image": growth_data[i - 1]['filename'],
+#             "to_image": growth_data[i]['filename'],
+#             "growth_rate": rate
+#         })
+
+#     return jsonify({
+#         "growth_rates": growth_rates,
+#         "details": growth_data
+#     }), 200
+
+
+
+@app.route('/process-and-analyze', methods=['POST'])
+def process_and_analyze():
     if 'images' not in request.files:
         return jsonify({"error": "No images provided"}), 400
 
     files = request.files.getlist('images')
     if len(files) < 2:
-        return jsonify({"error": "At least two images are required to calculate growth rate"}), 400
+        return jsonify({"error": "At least two images are required to process and analyze"}), 400
 
-    growth_data = []
+    processed_data = []
     green_percentages = []
     timestamps = []
 
-    for file in files:
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
+    temp_dir = os.path.abspath(os.path.join("backend", "temp"))
+    os.makedirs(temp_dir, exist_ok=True)
 
-        try:
-            green_percentage = calculate_green_percentage(file_path)
+    try:
+        for file in files:
+            # Save the uploaded file
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(temp_dir, filename)
+            file.save(file_path)
+
+            # Load the image
+            image = cv2.imread(file_path)
+            if image is None:
+                return jsonify({'error': f'Invalid image file: {filename}'}), 400
+
+            # Calculate median intensity
+            gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            median_intensity = np.median(gray_image)
+            debug_log(f"Median intensity for {filename}: {median_intensity}")
+
+            # Dynamically adjust CLAHE and gamma parameters
+            clip_limit, tile_grid_size = dynamic_clahe_parameters(median_intensity)
+            gamma_value = dynamic_gamma(median_intensity)
+            debug_log(f"CLAHE: clip_limit={clip_limit}, tile_grid_size={tile_grid_size}")
+            debug_log(f"Gamma value: {gamma_value}")
+
+            # Apply CLAHE
+            clahe_image = clahe_correction(image, clip_limit=clip_limit, tile_grid_size=tile_grid_size)
+
+            # Apply Gamma Correction
+            corrected_image = gamma_correction(clahe_image, gamma=gamma_value)
+
+            # Save the processed image
+            output_filename = f"processed_{filename}"
+            output_path = os.path.join(temp_dir, output_filename)
+            cv2.imwrite(output_path, corrected_image)
+
+            # Calculate the percentage of green area in the processed image
+            green_percentage = calculate_green_percentage(output_path)
             green_percentages.append(green_percentage)
             timestamps.append(datetime.now().isoformat())  # Use actual timestamp metadata if available
-            growth_data.append({
+
+            # Append processed data
+            processed_data.append({
                 "filename": filename,
-                "green_percentage": green_percentages
+                "processed_filename": output_filename,
+                "green_percentage": green_percentage,
             })
-        finally:
-            os.remove(file_path)
 
-    # Calculate growth rates between consecutive images
-    growth_rates = []
-    for i in range(1, len(green_percentages)):
-        rate = ((green_percentages[i] - green_percentages[i - 1]) / green_percentages[i - 1]) * 100
-        growth_rates.append({
-            "from_image": growth_data[i - 1]['filename'],
-            "to_image": growth_data[i]['filename'],
-            "growth_rate": rate
-        })
+        # Calculate growth rates between consecutive images
+        growth_rates = []
+        for i in range(1, len(green_percentages)):
+            rate = ((green_percentages[i] - green_percentages[i - 1]) / green_percentages[i - 1]) * 100
+            growth_rates.append({
+                "from_image": processed_data[i - 1]['filename'],
+                "to_image": processed_data[i]['filename'],
+                "growth_rate": rate,
+                "timestamp_from": timestamps[i - 1],
+                "timestamp_to": timestamps[i]
+            })
 
-    return jsonify({
-        "growth_rates": growth_rates,
-        "details": growth_data
-    }), 200
+        return jsonify({
+            "processed_images": processed_data,
+            "growth_rates": growth_rates
+        }), 200
 
+    except Exception as e:
+        debug_log(f"Error: {e}")
+        return jsonify({'error': str(e)}), 500
 
+    finally:
+        # Cleanup temporary files
+        for file in os.listdir(temp_dir):
+            file_path = os.path.join(temp_dir, file)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
 
 
 
@@ -130,58 +220,58 @@ def dynamic_gamma(median_intensity):
     else:  # Overexposed
         return 0.6  # Strong darkening effect
 
-@app.route('/process-image', methods=['POST'])
-def process_image():
-    try:
-        # Create temp directory
-        temp_dir = os.path.abspath(os.path.join("backend", "temp"))
-        os.makedirs(temp_dir, exist_ok=True)
+# @app.route('/process-image', methods=['POST'])
+# def process_image():
+#     try:
+#         # Create temp directory
+#         temp_dir = os.path.abspath(os.path.join("backend", "temp"))
+#         os.makedirs(temp_dir, exist_ok=True)
 
-        # Check for file in the request
-        if 'image' not in request.files:
-            return jsonify({'error': 'No image file provided'}), 400
+#         # Check for file in the request
+#         if 'image' not in request.files:
+#             return jsonify({'error': 'No image file provided'}), 400
 
-        file = request.files['image']
-        if file and allowed_file(file.filename):
-            # Save uploaded file
-            filename = secure_filename(file.filename)
-            file_path = os.path.join(temp_dir, filename)
-            file.save(file_path)
+#         file = request.files['image']
+#         if file and allowed_file(file.filename):
+#             # Save uploaded file
+#             filename = secure_filename(file.filename)
+#             file_path = os.path.join(temp_dir, filename)
+#             file.save(file_path)
 
-            # Load the image
-            image = cv2.imread(file_path)
-            if image is None:
-                return jsonify({'error': 'Invalid image file'}), 400
+#             # Load the image
+#             image = cv2.imread(file_path)
+#             if image is None:
+#                 return jsonify({'error': 'Invalid image file'}), 400
 
-            # Calculate median intensity
-            gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            median_intensity = np.median(gray_image)
-            debug_log(f"Median intensity: {median_intensity}")
+#             # Calculate median intensity
+#             gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+#             median_intensity = np.median(gray_image)
+#             debug_log(f"Median intensity: {median_intensity}")
 
-            # Dynamically adjust CLAHE and gamma parameters
-            clip_limit, tile_grid_size = dynamic_clahe_parameters(median_intensity)
-            gamma_value = dynamic_gamma(median_intensity)
-            debug_log(f"CLAHE: clip_limit={clip_limit}, tile_grid_size={tile_grid_size}")
-            debug_log(f"Gamma value: {gamma_value}")
+#             # Dynamically adjust CLAHE and gamma parameters
+#             clip_limit, tile_grid_size = dynamic_clahe_parameters(median_intensity)
+#             gamma_value = dynamic_gamma(median_intensity)
+#             debug_log(f"CLAHE: clip_limit={clip_limit}, tile_grid_size={tile_grid_size}")
+#             debug_log(f"Gamma value: {gamma_value}")
 
-            # Apply CLAHE
-            clahe_image = clahe_correction(image, clip_limit=clip_limit, tile_grid_size=tile_grid_size)
+#             # Apply CLAHE
+#             clahe_image = clahe_correction(image, clip_limit=clip_limit, tile_grid_size=tile_grid_size)
 
-            # Apply Gamma Correction
-            corrected_image = gamma_correction(clahe_image, gamma=gamma_value)
+#             # Apply Gamma Correction
+#             corrected_image = gamma_correction(clahe_image, gamma=gamma_value)
 
-            # Save and return the processed image
-            output_filename = f"processed_{filename}"
-            output_path = os.path.join(temp_dir, output_filename)
-            cv2.imwrite(output_path, corrected_image)
+#             # Save and return the processed image
+#             output_filename = f"processed_{filename}"
+#             output_path = os.path.join(temp_dir, output_filename)
+#             cv2.imwrite(output_path, corrected_image)
 
-            return send_file(output_path, mimetype='image/png')
+#             return send_file(output_path, mimetype='image/png')
 
-        return jsonify({'error': 'Invalid file type'}), 400
+#         return jsonify({'error': 'Invalid file type'}), 400
 
-    except Exception as e:
-        debug_log(f"Error: {e}")
-        return jsonify({'error': str(e)}), 500
+#     except Exception as e:
+#         debug_log(f"Error: {e}")
+#         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
