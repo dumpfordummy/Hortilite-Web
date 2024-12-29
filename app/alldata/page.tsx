@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { getDownloadURL, listAll, ref, getMetadata } from 'firebase/storage';
+import { getDownloadURL, listAll, ref } from 'firebase/storage';
 import { collection, getDocs, Timestamp } from 'firebase/firestore';
 import { storage, auth, db } from '../../lib/firebase';
-import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged, User } from 'firebase/auth';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import { SoilData } from '../../interfaces/soilData';
 import { TempData } from '../../interfaces/tempData';
 
@@ -32,51 +32,84 @@ export default function CombinedDataPage() {
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [groupsPerDay, setGroupsPerDay] = useState<number>(2);
+  const [availableSets, setAvailableSets] = useState<string[]>([]);
+  const [selectedSet, setSelectedSet] = useState<string>('');
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
     });
+
+    const fetchAvailableSets = async () => {
+      const cameraSnapshots = await getDocs(collection(db, "Camera"));
+      const sets = cameraSnapshots.docs.map((doc) => doc.id.split(".").pop());
+      setAvailableSets(sets.filter((set): set is string => !!set));
+    };
+
+    fetchAvailableSets();
     return () => unsubscribeAuth();
   }, []);
 
   const handleFetchData = async () => {
-    if (!startDate || !endDate || groupsPerDay <= 0) {
-      alert('Please select valid start and end dates and a positive number of groups per day.');
+    console.log('Fetch button clicked');
+    console.log({ startDate, endDate, groupsPerDay, selectedSet });
+
+    if (!startDate || !endDate || groupsPerDay <= 0 || !selectedSet) {
+      alert('Please select valid start/end dates, groups per day, and a set.');
       return;
     }
 
     const start = new Date(startDate);
     const end = new Date(endDate);
-    // Calculate the interval: if user selects 2, that means 24 / 2 = 12 hours per group.
     const intervalInMs = (24 / groupsPerDay) * 60 * 60 * 1000;
     const data: CombinedData[] = [];
 
     try {
-      const imagesRef = ref(storage, '');
-      const imageList = await listAll(imagesRef);
+      const cameraIp = `192_168_1_${selectedSet}`;
+      console.log('Fetching images for camera IP:', cameraIp);
+      const listRef = ref(storage, '');
+      const res = await listAll(listRef);
+
       const imageData: ImageData[] = (await Promise.all(
-        imageList.items.map(async (item) => {
-          const url = await getDownloadURL(item);
-          const metadata = await getMetadata(item);
-          const createdAt = new Date(metadata.timeCreated);
-          if (createdAt >= start && createdAt <= end) {
-            return { type: 'image', id: item.name, url, createdAt };
+        res.items.map(async (itemRef) => {
+          const fileName = itemRef.name;
+          const [ip1, ip2, ip3, ip4, date, time] = fileName.split('_');
+          const ip = `${ip1}_${ip2}_${ip3}_${ip4}`;
+          const year = date.substring(0, 4);
+          const month = date.substring(4, 6);
+          const day = date.substring(6, 8);
+          const hour = time.substring(0, 2);
+          const minute = time.substring(2, 4);
+          const second = time.substring(4, 6);
+
+          // Match only files for the selected camera IP
+          if (ip !== cameraIp) return null;
+
+          const fileDate = new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}`);
+          if (fileDate >= start && fileDate <= end) {
+            const url = await getDownloadURL(itemRef);
+            return { type: 'image', id: fileName, url, createdAt: fileDate };
           }
           return null;
         })
       )).filter((item): item is ImageData => item !== null);
+
+      console.log('Images added:', imageData.length);
       data.push(...imageData);
     } catch (error) {
       console.error('Error fetching images:', error);
     }
 
     const fetchSensorData = async (collectionName: string, source: 'Soil' | 'DHT22') => {
-      const snapshots = await getDocs(collection(db, collectionName));
-      for (const doc of snapshots.docs) {
-        const sensorDataSnapshots = await getDocs(collection(db, collectionName, doc.id, 'Data'));
-        sensorDataSnapshots.docs.forEach((doc) => {
+      try {
+        const sensorDocId =
+          source === 'Soil'
+            ? `soil_${selectedSet.slice(-2).padStart(2, '0')}`
+            : `dht22_${selectedSet.slice(-1)}`;
+        console.log(`${source} Path:`, `${collectionName}/${sensorDocId}/Data`);
+        const sensorSnapshots = await getDocs(collection(db, collectionName, sensorDocId, 'Data'));
+        sensorSnapshots.docs.forEach((doc) => {
           const docData = doc.data();
           const createdAt = (docData.date_time as Timestamp).toDate();
           if (createdAt >= start && createdAt <= end) {
@@ -84,27 +117,30 @@ export default function CombinedDataPage() {
               const soilData: SoilData = {
                 id: doc.id,
                 date_time: createdAt,
-                EC: docData.EC,
-                Humidity: docData.Humidity,
-                Moisture: docData.Moisture,
-                Nitrogen: docData.Nitrogen,
-                pH: docData.pH,
-                Phosphorus: docData.Phosphorus,
-                Potassium: docData.Potassium,
-                Temperature: docData.Temperature
+                EC: docData.EC || 0,
+                Humidity: docData.Humidity || 0,
+                Moisture: docData.Moisture || 0,
+                Nitrogen: docData.Nitrogen || 0,
+                pH: docData.pH || 7,
+                Phosphorus: docData.Phosphorus || 0,
+                Potassium: docData.Potassium || 0,
+                Temperature: docData.Temperature || 0,
               };
               data.push({ type: 'sensor', id: doc.id, source, data: soilData, createdAt });
             } else {
               const tempData: TempData = {
                 id: doc.id,
                 date_time: createdAt,
-                Humidity: docData.Humidity,
-                Temperature: docData.Temperature
+                Humidity: docData.Humidity || 0,
+                Temperature: docData.Temperature || 0,
               };
               data.push({ type: 'sensor', id: doc.id, source, data: tempData, createdAt });
             }
           }
         });
+        console.log(`${source} data fetched:`, sensorSnapshots.docs.length);
+      } catch (error) {
+        console.error(`Error fetching ${source} data:`, error);
       }
     };
 
@@ -155,8 +191,20 @@ export default function CombinedDataPage() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold text-center mb-6">All Data</h1>
+      <h1 className="text-3xl font-bold text-center mb-6">Data by Set</h1>
       <div className="mb-6 flex space-x-4">
+        <select
+          value={selectedSet}
+          onChange={(e) => setSelectedSet(e.target.value)}
+          className="border rounded px-4 py-2"
+        >
+          <option value="">Select Set</option>
+          {availableSets.map((set) => (
+            <option key={set} value={set}>
+              Set {set}
+            </option>
+          ))}
+        </select>
         <input type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="border rounded px-4 py-2" />
         <input type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="border rounded px-4 py-2" />
         <input
