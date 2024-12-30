@@ -3,6 +3,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { collection, getDocs } from 'firebase/firestore'
 import { auth, db } from '../../lib/firebase'
 import { User, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from 'firebase/auth'
+import Link from "next/link"
+
 
 interface Device {
     id: string
@@ -25,7 +27,7 @@ export default function DeviceStatusPage() {
     const [loading, setLoading] = useState(true)
     const [deviceType, setDeviceType] = useState('Camera')
     const [devices, setDevices] = useState<Device[]>([])
-    
+
     useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser)
@@ -44,11 +46,11 @@ export default function DeviceStatusPage() {
                 const deviceData: Device[] = snapshot.docs.map((doc) => {
                     const data = doc.data() as Device
                     if (!data.id) {
-                      data.id = doc.id; // Assign the Firestore id only if it doesn't exist in the document
+                        data.id = doc.id; // Assign the Firestore id only if it doesn't exist in the document
                     }
                     return data;
-                  });
-                  
+                });
+
                 setDevices(deviceData)
             } catch (error) {
                 console.error('Error fetching devices:', error)
@@ -83,14 +85,19 @@ export default function DeviceStatusPage() {
     }
 
     return (
-        <div className="min-h-screen p-6 max-w-4xl mx-auto">
-            <nav className="flex justify-between items-center mb-6">
+        <div className="min-h-screen p-6 max-w-4xl mx-auto space-y-4">
+            <nav className="flex items-center justify-between">
                 <div className="flex space-x-4">
+                    <Link href="/">
+                        <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                            Home
+                        </button>
+                    </Link>
                     {deviceTypes.map((type) => (
                         <button
                             key={type}
                             onClick={() => handleDeviceTypeChange(type)}
-                            className={`px-4 py-2 rounded ${deviceType === type ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'
+                            className={`px-4 py-2 rounded ${deviceType === type ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-800"
                                 } hover:bg-blue-500 hover:text-white`}
                         >
                             {type}
@@ -104,22 +111,22 @@ export default function DeviceStatusPage() {
                     Sign Out
                 </button>
             </nav>
-            <h1 className="text-3xl font-bold mb-4">{deviceType} Status</h1>
+            <h1 className="text-3xl font-bold">{deviceType} Status</h1>
             {devices.length === 0 ? (
                 <div className="text-center text-gray-600">No devices found</div>
             ) : (
                 <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {devices.map((device: Device) => (
+                    {devices.map((device) => (
                         <li
-                            key={device.id} // Ensure each child has a unique key
+                            key={device.id}
                             className="border border-gray-300 rounded-lg p-4 bg-white shadow"
                         >
                             <h2 className="text-xl font-semibold mb-2">{device.id}</h2>
                             <p
-                                className={`text-lg font-medium ${device.active ? 'text-green-600' : 'text-red-600'
+                                className={`text-lg font-medium ${device.active ? "text-green-600" : "text-red-600"
                                     }`}
                             >
-                                {device.active ? 'Online' : 'Offline'}
+                                {device.active ? "Online" : "Offline"}
                             </p>
                         </li>
                     ))}

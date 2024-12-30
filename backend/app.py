@@ -217,58 +217,58 @@ def calculate_green_percentage(image_path):
 
     return green_percentage
 
-# @app.route('/process-image', methods=['POST'])
-# def process_image():
-#     try:
-#         # Create temp directory
-#         temp_dir = os.path.abspath(os.path.join("backend", "temp"))
-#         os.makedirs(temp_dir, exist_ok=True)
+@app.route('/process-image', methods=['POST'])
+def process_image():
+    try:
+        # Create temp directory
+        temp_dir = os.path.abspath(os.path.join("backend", "temp"))
+        os.makedirs(temp_dir, exist_ok=True)
 
-#         # Check for file in the request
-#         if 'image' not in request.files:
-#             return jsonify({'error': 'No image file provided'}), 400
+        # Check for file in the request
+        if 'image' not in request.files:
+            return jsonify({'error': 'No image file provided'}), 400
 
-#         file = request.files['image']
-#         if file and allowed_file(file.filename):
-#             # Save uploaded file
-#             filename = secure_filename(file.filename)
-#             file_path = os.path.join(temp_dir, filename)
-#             file.save(file_path)
+        file = request.files['image']
+        if file and allowed_file(file.filename):
+            # Save uploaded file
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(temp_dir, filename)
+            file.save(file_path)
 
-#             # Load the image
-#             image = cv2.imread(file_path)
-#             if image is None:
-#                 return jsonify({'error': 'Invalid image file'}), 400
+            # Load the image
+            image = cv2.imread(file_path)
+            if image is None:
+                return jsonify({'error': 'Invalid image file'}), 400
 
-#             # Calculate median intensity
-#             gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-#             median_intensity = np.median(gray_image)
-#             debug_log(f"Median intensity: {median_intensity}")
+            # Calculate median intensity
+            gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            median_intensity = np.median(gray_image)
+            debug_log(f"Median intensity: {median_intensity}")
 
-#             # Dynamically adjust CLAHE and gamma parameters
-#             clip_limit, tile_grid_size = dynamic_clahe_parameters(median_intensity)
-#             gamma_value = dynamic_gamma(median_intensity)
-#             debug_log(f"CLAHE: clip_limit={clip_limit}, tile_grid_size={tile_grid_size}")
-#             debug_log(f"Gamma value: {gamma_value}")
+            # Dynamically adjust CLAHE and gamma parameters
+            clip_limit, tile_grid_size = dynamic_clahe_parameters(median_intensity)
+            gamma_value = dynamic_gamma(median_intensity)
+            debug_log(f"CLAHE: clip_limit={clip_limit}, tile_grid_size={tile_grid_size}")
+            debug_log(f"Gamma value: {gamma_value}")
 
-#             # Apply CLAHE
-#             clahe_image = clahe_correction(image, clip_limit=clip_limit, tile_grid_size=tile_grid_size)
+            # Apply CLAHE
+            clahe_image = clahe_correction(image, clip_limit=clip_limit, tile_grid_size=tile_grid_size)
 
-#             # Apply Gamma Correction
-#             corrected_image = gamma_correction(clahe_image, gamma=gamma_value)
+            # Apply Gamma Correction
+            corrected_image = gamma_correction(clahe_image, gamma=gamma_value)
 
-#             # Save and return the processed image
-#             output_filename = f"processed_{filename}"
-#             output_path = os.path.join(temp_dir, output_filename)
-#             cv2.imwrite(output_path, corrected_image)
+            # Save and return the processed image
+            output_filename = f"processed_{filename}"
+            output_path = os.path.join(temp_dir, output_filename)
+            cv2.imwrite(output_path, corrected_image)
 
-#             return send_file(output_path, mimetype='image/png')
+            return send_file(output_path, mimetype='image/png')
 
-#         return jsonify({'error': 'Invalid file type'}), 400
+        return jsonify({'error': 'Invalid file type'}), 400
 
-#     except Exception as e:
-#         debug_log(f"Error: {e}")
-#         return jsonify({'error': str(e)}), 500
+    except Exception as e:
+        debug_log(f"Error: {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

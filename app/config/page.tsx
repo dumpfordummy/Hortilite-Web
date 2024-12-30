@@ -10,6 +10,8 @@ import {
   User,
 } from 'firebase/auth';
 
+import Link from "next/link"
+
 const handleGoogleSignIn = async () => {
   const provider = new GoogleAuthProvider();
   try {
@@ -101,6 +103,12 @@ export default function UpdateGlobalPage() {
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
+      <Link href="/">
+        <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+          Home
+        </button>
+      </Link>
+
       <h1 className="text-3xl font-bold mb-6 text-center">Data Retrieval Interval</h1>
       {errorMessage && (
         <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">{errorMessage}</div>
