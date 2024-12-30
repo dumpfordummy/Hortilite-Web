@@ -9,7 +9,7 @@ interface Device {
     active?: boolean
 }
 
-const deviceTypes = ['Camera', 'DHT22', 'Lighting', 'Soil']
+const deviceTypes = ['Camera', 'DHT22', 'Soil']
 
 const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider()
