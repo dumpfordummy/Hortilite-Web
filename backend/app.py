@@ -10,32 +10,9 @@ from datetime import datetime
 app = Flask(__name__)
 CORS(app)
 
-
-
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-def calculate_green_percentage(image_path):
-    # Read the image
-    image = cv2.imread(image_path)
-
-    # Convert the image to HSV color space
-    hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-
-    # Define the range for the green color
-    lower_green = np.array([35, 40, 40])  # Adjust the lower range of green
-    upper_green = np.array([85, 255, 255])  # Adjust the upper range of green
-
-    # Create a binary mask where green colors are white
-    mask = cv2.inRange(hsv_image, lower_green, upper_green)
-
-    # Calculate the percentage of green area
-    total_pixels = mask.size
-    green_pixels = cv2.countNonZero(mask)
-    green_percentage = (green_pixels / total_pixels) * 100
-
-    return green_percentage
 
 # @app.route('/analyze-growth', methods=['POST'])
 # def analyze_growth():
@@ -80,7 +57,6 @@ def calculate_green_percentage(image_path):
 #         "growth_rates": growth_rates,
 #         "details": growth_data
 #     }), 200
-
 
 
 @app.route('/process-and-analyze', methods=['POST'])
@@ -219,6 +195,27 @@ def dynamic_gamma(median_intensity):
         return 1.0  # No correction
     else:  # Overexposed
         return 0.6  # Strong darkening effect
+
+def calculate_green_percentage(image_path):
+    # Read the image
+    image = cv2.imread(image_path)
+
+    # Convert the image to HSV color space
+    hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+    # Define the range for the green color
+    lower_green = np.array([35, 40, 40])  # Adjust the lower range of green
+    upper_green = np.array([85, 255, 255])  # Adjust the upper range of green
+
+    # Create a binary mask where green colors are white
+    mask = cv2.inRange(hsv_image, lower_green, upper_green)
+
+    # Calculate the percentage of green area
+    total_pixels = mask.size
+    green_pixels = cv2.countNonZero(mask)
+    green_percentage = (green_pixels / total_pixels) * 100
+
+    return green_percentage
 
 # @app.route('/process-image', methods=['POST'])
 # def process_image():
