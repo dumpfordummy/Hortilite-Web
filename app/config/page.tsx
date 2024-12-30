@@ -22,8 +22,8 @@ const handleGoogleSignIn = async () => {
 export default function UpdateGlobalPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentValue, setCurrentValue] = useState<number | null>(null);
-  const [newValue, setNewValue] = useState<number>(1);
+  const [currentValue, setCurrentValue] = useState<string>('');
+  const [newValue, setNewValue] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   // Check user authentication
@@ -40,10 +40,10 @@ export default function UpdateGlobalPage() {
     if (user) {
       const fetchData = async () => {
         try {
-          const docRef = doc(db, 'Global', 'YhqJZ0hzHPOSubq49rCZ'); // Replace with your document ID
+          const docRef = doc(db, 'Global', '1'); // Replace with your document ID
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
-            setCurrentValue(docSnap.data().collectionIntervalHour);
+            setCurrentValue(docSnap.data().collectionHours);
           } else {
             console.error('No such document!');
           }
@@ -57,14 +57,23 @@ export default function UpdateGlobalPage() {
 
   // Handle the update of the field
   const handleUpdate = async () => {
-    if (newValue < 1 || newValue > 24) {
+    const isValid = /^[-,0-9\s]+$/.test(newValue);
+
+    if (!isValid) {
       setErrorMessage('Value must be between 1 and 24.');
       return;
     }
 
+    const numValues = newValue.split(',').map(value => parseInt(value, 10)).filter(value => !isNaN(value));
+
+    if (numValues.some(value => value < 1 || value > 24)) {
+      setErrorMessage('Each value must be between 1 and 24.');
+      return;
+    }
+
     try {
-      const docRef = doc(db, 'Global', 'YhqJZ0hzHPOSubq49rCZ'); // Replace with your document ID
-      await updateDoc(docRef, { collectionIntervalHour: newValue });
+      const docRef = doc(db, 'Global', '1'); // Replace with your document ID
+      await updateDoc(docRef, { collectionHours: newValue });
       setCurrentValue(newValue);
       setErrorMessage('');
       alert('Field updated successfully!');
@@ -97,17 +106,18 @@ export default function UpdateGlobalPage() {
         <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">{errorMessage}</div>
       )}
       <div className="mb-6">
-        <p className="text-lg font-medium">Current Value: {currentValue ?? 'Loading...'} hours</p>
+        <p className="text-lg font-medium">Current Value: {currentValue ?? 'Loading...'}</p>
       </div>
       <div className="mb-4">
         <label htmlFor="newValue" className="block text-lg font-medium mb-2">
-          New Value (1-24):
+          New Value :
         </label>
+        <small>*<i>specify time range without spaces [10-12], [12,14,16]</i></small>
         <input
-          type="number"
+          type="text"
           id="newValue"
           value={newValue}
-          onChange={(e) => setNewValue(Number(e.target.value))}
+          onChange={(e) => setNewValue(e.target.value)}
           min={1}
           max={24}
           className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
