@@ -4,7 +4,7 @@ import Link from "next/link"
 export default function HomePage() {
   return (
     <div className="p-8 max-w-4xl mx-auto">
-      <h1 className="text-4xl font-bold text-center mb-10">Hortilite Farming System</h1>
+      <h1 className="text-4xl font-bold text-center mb-10">TARUMT Smart Farming System</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <Link href="/alldata">
           <div className="bg-white shadow-md rounded p-6 hover:bg-gray-50 transition">

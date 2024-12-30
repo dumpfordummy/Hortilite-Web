@@ -44,12 +44,13 @@ const ProcessImagePage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-50">
-      <Link href="/">
-        <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-          Home
-        </button>
-      </Link>
-
+      <div className="absolute top-0 left-2 p-6">
+        <Link href="/">
+          <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+            Home
+          </button>
+        </Link>
+      </div>
       <h1 className="text-2xl font-bold mb-4">Process Image</h1>
       <div className="mb-4">
         <input
